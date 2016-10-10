@@ -1,0 +1,174 @@
+{%load static from staticfiles%}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Поиск на карте</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="{%static "leaflet-areaselect/leaflet-areaselect.css"%}" />
+    <link rel="stylesheet" href="{%static "main_style.css"%}" />
+</head>
+<body>
+<div class="content">
+    <section id="map_and_filter">
+        <div id="map"></div>
+        <div id="filter">
+        <form id = "filter_form" method="POST">
+            {% csrf_token %}
+            <div class="input_wrapper">
+                <div class="label">Пользователь</div>
+                <input class="user_id" name="user_id" type="text" value="">
+            </div>
+            <div class="input_wrapper">
+                <div class="label">Тэги</div>
+                <input class="tags" name="tags" type="text" value="">
+            </div>
+            <div class="input_wrapper">
+                <div class="label">Режим тэгов</div>
+                <select class="tag_mode" name="tag_mode" value="">
+                    <option>any</option>
+                    <option>all</option>
+                </select>
+            </div>
+            <div class="input_wrapper">
+                <div class="label">Сортировка</div>
+                <select class="sort" name="sort" value="">
+                    <option>date-posted-asc</option>
+                    <option>date-posted-desc</option>
+                    <option>date-taken-asc</option>
+                    <option>date-taken-desc</option>
+                    <option>interestingness-desc</option>
+                    <option>interestingness-asc</option>
+                    <option>relevance</option>
+                </select>
+            </div>
+            <div class="input_wrapper">
+                <div class="label">Область</div>
+                <input class="bbox" name="bbox" id="bbox" type="text" value="">
+            </div>
+
+            <input class="hidden" name="page" id="page" type="text" value="1">
+            <input class="hidden" name="per_page" id="per_page" type="text" value="10">
+            <input class="hidden" name="api_key" id="api_key" type="text" value="27aece9b5825b86f0526e2d789b198d8">
+            <input class="hidden" name="method" id="method" type="text" value="flickr.photos.search">
+        </form>
+        </div>
+    </section>
+    <a href='' id="save_all" class="save">Сохранить все</a>
+    <section id="image_list">
+        <div class="image" id="photo_">
+        <div class="fields"> 
+            <div class="field_wrapper">
+                <div class="label">id</div>
+                <div class="photo_text_field photo_id field" rel="id"></div>
+            </div>
+            <div class="field_wrapper">
+                <div class="label">owner</div>
+                <div class="photo_text_field photo_owner field"  rel="owner"></div>
+            </div>    
+            <div class="field_wrapper">
+                <div class="label">secret</div>
+                <div class="photo_text_field photo_secret field" rel="secret"></div>
+            </div> 
+            <div class="field_wrapper">
+                <div class="label">server</div>
+                <div class="photo_text_field photo_server field" rel="server"></div>
+            </div> 
+            <div class="field_wrapper">
+                <div class="label">farm</div>
+                <div class="photo_text_field photo_farm field" rel="farm"></div>
+            </div> 
+            <div class="field_wrapper">
+                <div class="label">title</div>
+                <div class="photo_text_field photo_title field" rel="title"></div>
+            </div> 
+            <div class="field_wrapper">
+                <div class="label">ispublic</div>
+                <div class="photo_bool_field photo_ispublic field" rel="ispublic"></div>
+            </div>
+            <div class="field_wrapper">
+                <div class="label">isfriend</div>
+                <div class="photo_bool_field photo_isfriend field" rel="isfriend"></div>
+            </div>  
+             <div class="field_wrapper">
+                <div class="label">isfamily</div>
+                <div class="photo_bool_field photo_isfamily field" rel="isfamily"></div>
+            </div>      
+        </div>
+        <a href="/map/save/" class="save">Сохранить</a>
+        <div class="saved_msg">Сохранeно</div>
+        </div>
+        <div class="error">
+            <div class="fields"> 
+                <div class="error_text_field error_code" rel="code"></div>
+                <div class="error_text_field error_message" rel="message"></div>
+            </div>
+        </div>
+    </section>
+</div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+<script src="{%static "leaflet-areaselect/leaflet-areaselect.js"%}"></script>
+<script src="{%static "search_on_map.js"%}"></script>
+<script>
+// initialize the map on the "map" div with a given center and zoom
+var map = L.map('map').setView([55.7522200, 37.6155600], 8);
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18,
+}).addTo(map);
+
+
+var areaSelect = L.areaSelect({width:50, height:70});
+areaSelect.on("change", function() {
+    var bounds = this.getBounds();
+    //при изменении координаты в bbox
+    $("#bbox").val(bounds.getSouthWest().lat + ", " + bounds.getSouthWest().lng+","+bounds.getNorthEast().lat + ", " + bounds.getNorthEast().lng);
+    $("#bbox").trigger("change");
+});
+areaSelect.addTo(map);
+
+var getter = new FlickrPhotoGetter(
+    "https://api.flickr.com/services/rest/?",
+    "/map/save/",
+    "#filter_form",
+    ".image",
+    "&format=json&nojsoncallback=1"
+);
+
+getter.create_photo_container(
+    "#image_list",
+    ".save",
+    ".image",
+    ".error",
+    ".field"
+);
+
+getter.set_container_templates(".image",".error");
+
+
+
+$("#save_all").on("click", function(event){
+    event.preventDefault();
+    getter.save_all_elements();
+});
+
+$("#filter_form").on("change", function(){
+    getter.reload_elements();
+});
+
+$(document).ready(function(){
+    getter.reload_elements();
+});
+
+//simpliest infinite scroll
+$(document).scroll(function(event) {
+    if($(document).scrollTop() 
+        + $(window).height() >= $("#image_list").offset().top){
+        getter.load_new_elements();
+    }
+});
+
+</script>
+</body>
+</html>

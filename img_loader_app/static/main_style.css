@@ -1,0 +1,24 @@
+#map, .leaflet-areaselect-container { height: 400px;}
+html{
+	font-family: Calibri;
+}
+
+.leaflet-pane {z-index: 0 !important;}
+
+.hidden {display: none;}
+.save, .save:visited { color: #7777cc}
+
+.saved_msg {display: none;} 
+.in_process_msg {display: none;}
+.in_process .in_process_msg {display: block;}
+.in_process .save {display: none;}
+.saved .saved_msg {display: block;}
+.saved .save {display: none;}
+
+.error {background:#cc7777; }
+#image_list { margin-top: 20px;}
+.image {margin-bottom: 30px;}
+.field_wrapper {padding: 3px;}
+.label {font-size: 16pt;}
+#filter {margin-top:20px;}
+.input_wrapper {margin-bottom: 5px;}
